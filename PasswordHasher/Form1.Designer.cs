@@ -38,6 +38,7 @@
             this.removeSaltButton = new System.Windows.Forms.Button();
             this.sendButton = new System.Windows.Forms.Button();
             this.label4 = new System.Windows.Forms.Label();
+            this.displayCheckBox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // passBox
@@ -45,9 +46,9 @@
             this.passBox.AllowDrop = true;
             this.passBox.Location = new System.Drawing.Point(12, 36);
             this.passBox.Name = "passBox";
-            this.passBox.PasswordChar = '*';
             this.passBox.Size = new System.Drawing.Size(145, 20);
             this.passBox.TabIndex = 0;
+            this.passBox.UseSystemPasswordChar = true;
             this.passBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.passBox_KeyDown);
             // 
             // label1
@@ -66,6 +67,7 @@
             this.outputBox.ReadOnly = true;
             this.outputBox.Size = new System.Drawing.Size(292, 20);
             this.outputBox.TabIndex = 2;
+            this.outputBox.UseSystemPasswordChar = true;
             // 
             // label2
             // 
@@ -135,11 +137,24 @@
             this.label4.Text = "Use the Send button to avoid using the insecure method of copy + paste.";
             this.label4.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
+            // displayCheckBox
+            // 
+            this.displayCheckBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.displayCheckBox.AutoSize = true;
+            this.displayCheckBox.Location = new System.Drawing.Point(244, 91);
+            this.displayCheckBox.Name = "displayCheckBox";
+            this.displayCheckBox.Size = new System.Drawing.Size(60, 17);
+            this.displayCheckBox.TabIndex = 9;
+            this.displayCheckBox.Text = "Display";
+            this.displayCheckBox.UseVisualStyleBackColor = true;
+            this.displayCheckBox.Click += new System.EventHandler(this.displayCheckBox_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(468, 163);
+            this.Controls.Add(this.displayCheckBox);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.sendButton);
             this.Controls.Add(this.removeSaltButton);
@@ -173,6 +188,7 @@
         private System.Windows.Forms.Button removeSaltButton;
         private System.Windows.Forms.Button sendButton;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.CheckBox displayCheckBox;
     }
 }
 

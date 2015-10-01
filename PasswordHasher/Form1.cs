@@ -3,6 +3,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Security.Cryptography;
 using System.Collections.Specialized;
+using System.Runtime.InteropServices;
 
 namespace PasswordHasher
 {
@@ -12,7 +13,7 @@ namespace PasswordHasher
         private static String itoa64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
         private EventHandler sendPasswordToWindow;
-
+        
         public Form1()
         {
             InitializeComponent();
@@ -21,6 +22,19 @@ namespace PasswordHasher
 
             if (Properties.Settings.Default.Salts == null)
                 Properties.Settings.Default.Salts = new StringCollection();
+
+            /*
+            trayIcon = new NotifyIcon();
+            trayIcon.Text = "Password Hasher";
+            trayIcon.Icon = new System.Drawing.Icon(System.Drawing.SystemIcons.Application, 32, 32);
+            trayMenu = new ContextMenu();
+            GenerateTrayMenu();
+            trayIcon.ContextMenu = trayMenu;
+            trayIcon.Visible = true;
+            trayMenu.Popup += (sender, e) =>
+            {
+                prevWindow = GetForegroundWindow();
+            };*/
 
             foreach (String s in Properties.Settings.Default.Salts)
             {
@@ -40,6 +54,8 @@ namespace PasswordHasher
 
         private void SaveSalts()
         {
+            GenerateTrayMenu();
+
             StringCollection stringcollection = new StringCollection();
 
             foreach (object o in saltBox.Items)
@@ -47,6 +63,24 @@ namespace PasswordHasher
 
             Properties.Settings.Default.Salts = stringcollection;
             Properties.Settings.Default.Save();
+        }
+
+        
+        private void GenerateTrayMenu()
+        {
+            /*
+            trayMenu.MenuItems.Clear();
+
+            foreach(string s in Properties.Settings.Default.Salts)
+            {
+                trayMenu.MenuItems.Add( "Send: " + s, (sender, e) =>
+                {
+                    SetForegroundWindow(prevWindow);
+                    SendKeys.SendWait(crypt(passBox.Text, s));
+                });
+            }
+            trayMenu.MenuItems.Add("Exit", onExit);
+            */
         }
 
         private void passBox_KeyDown(object sender, KeyEventArgs e)
@@ -235,6 +269,16 @@ namespace PasswordHasher
 
             Deactivate -= sendPasswordToWindow;
             Cursor = Cursors.Default;
+        }
+
+        private void onExit(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void displayCheckBox_Click(object sender, EventArgs e)
+        {
+            outputBox.UseSystemPasswordChar = !displayCheckBox.Checked;
         }
     }
 }
