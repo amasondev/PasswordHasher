@@ -63,6 +63,7 @@
             // 
             this.outputBox.Location = new System.Drawing.Point(12, 108);
             this.outputBox.Name = "outputBox";
+            this.outputBox.ReadOnly = true;
             this.outputBox.Size = new System.Drawing.Size(292, 20);
             this.outputBox.TabIndex = 2;
             // 
