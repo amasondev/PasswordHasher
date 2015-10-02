@@ -11,6 +11,8 @@ The salts you enter are saved, allowing you to store them for each place of use.
 
 The Send button allows you to transport the hash without use of the insecure clipboard.
 
+![Screenshot](https://raw.githubusercontent.com/veridiam/PasswordHasher/master/Images/Example.png)
+
 ## Download
 Download the latest release [Here](https://github.com/veridiam/PasswordHasher/releases)
 
