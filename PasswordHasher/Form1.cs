@@ -13,7 +13,10 @@ namespace PasswordHasher
         private static String itoa64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
         private EventHandler sendPasswordToWindow;
-        
+
+        private ContextMenu trayMenu;
+        private NotifyIcon trayIcon;
+
         public Form1()
         {
             InitializeComponent();
@@ -23,18 +26,22 @@ namespace PasswordHasher
             if (Properties.Settings.Default.Salts == null)
                 Properties.Settings.Default.Salts = new StringCollection();
 
-            /*
+            trayCheckBox.Checked = Properties.Settings.Default.Tray;
             trayIcon = new NotifyIcon();
             trayIcon.Text = "Password Hasher";
+            trayIcon.BalloonTipText = "Password Hasher minimized to tray.";
+            trayIcon.BalloonTipTitle = "Password Hasher";
             trayIcon.Icon = new System.Drawing.Icon(System.Drawing.SystemIcons.Application, 32, 32);
+            trayIcon.DoubleClick += (sender, e) =>
+            {
+                WindowState = FormWindowState.Normal;
+                ShowInTaskbar = true;
+                trayIcon.Visible = false;
+            };
             trayMenu = new ContextMenu();
             GenerateTrayMenu();
             trayIcon.ContextMenu = trayMenu;
-            trayIcon.Visible = true;
-            trayMenu.Popup += (sender, e) =>
-            {
-                prevWindow = GetForegroundWindow();
-            };*/
+            trayIcon.Visible = false;
 
             foreach (String s in Properties.Settings.Default.Salts)
             {
@@ -78,9 +85,9 @@ namespace PasswordHasher
                     SetForegroundWindow(prevWindow);
                     SendKeys.SendWait(crypt(passBox.Text, s));
                 });
-            }
+            }*/
+
             trayMenu.MenuItems.Add("Exit", onExit);
-            */
         }
 
         private void passBox_KeyDown(object sender, KeyEventArgs e)
@@ -279,6 +286,22 @@ namespace PasswordHasher
         private void displayCheckBox_Click(object sender, EventArgs e)
         {
             outputBox.UseSystemPasswordChar = !displayCheckBox.Checked;
+        }
+
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            if (trayCheckBox.Checked && WindowState == FormWindowState.Minimized)
+            {
+                trayIcon.Visible = true;
+                trayIcon.ShowBalloonTip(5000);
+                ShowInTaskbar = false;
+            }
+        }
+
+        private void trayCheckBox_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.Tray = trayCheckBox.Checked;
+            Properties.Settings.Default.Save();
         }
     }
 }

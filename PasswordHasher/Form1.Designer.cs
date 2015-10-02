@@ -39,6 +39,7 @@
             this.sendButton = new System.Windows.Forms.Button();
             this.label4 = new System.Windows.Forms.Label();
             this.displayCheckBox = new System.Windows.Forms.CheckBox();
+            this.trayCheckBox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // passBox
@@ -98,7 +99,7 @@
             // 
             // generateButton
             // 
-            this.generateButton.Location = new System.Drawing.Point(327, 35);
+            this.generateButton.Location = new System.Drawing.Point(330, 34);
             this.generateButton.Name = "generateButton";
             this.generateButton.Size = new System.Drawing.Size(129, 49);
             this.generateButton.TabIndex = 6;
@@ -118,7 +119,7 @@
             // 
             // sendButton
             // 
-            this.sendButton.Location = new System.Drawing.Point(327, 92);
+            this.sendButton.Location = new System.Drawing.Point(330, 93);
             this.sendButton.Name = "sendButton";
             this.sendButton.Size = new System.Drawing.Size(129, 36);
             this.sendButton.TabIndex = 7;
@@ -149,11 +150,23 @@
             this.displayCheckBox.UseVisualStyleBackColor = true;
             this.displayCheckBox.Click += new System.EventHandler(this.displayCheckBox_Click);
             // 
+            // trayCheckBox
+            // 
+            this.trayCheckBox.AutoSize = true;
+            this.trayCheckBox.Location = new System.Drawing.Point(12, 140);
+            this.trayCheckBox.Name = "trayCheckBox";
+            this.trayCheckBox.Size = new System.Drawing.Size(47, 17);
+            this.trayCheckBox.TabIndex = 10;
+            this.trayCheckBox.Text = "Tray";
+            this.trayCheckBox.UseVisualStyleBackColor = true;
+            this.trayCheckBox.CheckedChanged += new System.EventHandler(this.trayCheckBox_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(468, 163);
+            this.Controls.Add(this.trayCheckBox);
             this.Controls.Add(this.displayCheckBox);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.sendButton);
@@ -171,6 +184,7 @@
             this.ShowIcon = false;
             this.Text = "Password Hasher";
             this.TopMost = true;
+            this.Resize += new System.EventHandler(this.Form1_Resize);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -189,6 +203,7 @@
         private System.Windows.Forms.Button sendButton;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.CheckBox displayCheckBox;
+        private System.Windows.Forms.CheckBox trayCheckBox;
     }
 }
 

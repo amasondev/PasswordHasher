@@ -33,5 +33,17 @@ namespace PasswordHasher.Properties {
                 this["Salts"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool Tray {
+            get {
+                return ((bool)(this["Tray"]));
+            }
+            set {
+                this["Tray"] = value;
+            }
+        }
     }
 }
