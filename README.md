@@ -26,3 +26,5 @@ At the moment the hashing algorithm used is identical to that used in Unix crypt
 
 ## The Future
 I would like to release PasswordHasher for Android and iOS at some point, but am still unsure of implimentation. If you have any suggestions, let me know.
+
+One thing that could increase security is an optional mutation string, which would allow you to change the hash but keep the same password and salt, in the case that the hash is comprimised for any reason. However, this would break compatibility with Unix crypt.
