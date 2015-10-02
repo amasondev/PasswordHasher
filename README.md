@@ -20,5 +20,9 @@ At this time, PasswordHasher is only available for Windows. For Linux and OS X u
 	
 This will generate the same hash as PasswordHasher.
 
+## Questions
+#### Why is the salt limited to 8 characters?
+At the moment the hashing algorithm used is identical to that used in Unix crypt, for the sake of compatibility. If you want to add additional uniqueness to your hash, it should be done in the password.
+
 ## The Future
 I would like to release PasswordHasher for Android and iOS at some point, but am still unsure of implimentation. If you have any suggestions, let me know.
