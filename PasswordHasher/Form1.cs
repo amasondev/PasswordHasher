@@ -55,8 +55,9 @@ namespace PasswordHasher
                 saltBox.Items.Add(saltBox.Text);
 
             SaveSalts();
-
+                        
             outputBox.Text = crypt(passBox.Text, saltBox.Text);
+            passBox.Clear();
         }
 
         private void SaveSalts()
@@ -92,10 +93,7 @@ namespace PasswordHasher
 
         private void passBox_KeyDown(object sender, KeyEventArgs e)
         {
-            if(e.KeyCode == Keys.Enter)
-            {
-                generateButton_Click(this, new EventArgs());
-            }
+
         }
 
         private static byte[] Concat(byte[] array1, byte[] array2)
@@ -272,10 +270,22 @@ namespace PasswordHasher
 
         private void onDeactivate(object sender, EventArgs e)
         {
-            SendKeys.SendWait(outputBox.Text);
+            System.Threading.Thread.Sleep(100);
+            for (int i = 0; i < outputBox.Text.Length; i++)
+            {
+                SendKeys.SendWait(outputBox.Text[i].ToString());
+                // Wait some time between sending each character
+                System.Threading.Thread.Sleep(50);
+            }
 
             Deactivate -= sendPasswordToWindow;
             Cursor = Cursors.Default;
+            outputBox.Clear();
+        }
+
+        private void clearOutput(object sender, EventArgs e)
+        {
+            outputBox.Clear();
         }
 
         private void onExit(object sender, EventArgs e)
