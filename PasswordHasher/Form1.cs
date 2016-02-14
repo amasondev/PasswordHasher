@@ -26,7 +26,11 @@ namespace PasswordHasher
             if (Properties.Settings.Default.Salts == null)
                 Properties.Settings.Default.Salts = new StringCollection();
 
+            // Load settings
             trayCheckBox.Checked = Properties.Settings.Default.Tray;
+            enterCheckBox.Checked = Properties.Settings.Default.SendEnter;
+            ontopCheckBox.Checked = Properties.Settings.Default.OnTop;
+
             trayIcon = new NotifyIcon();
             trayIcon.Text = "Password Hasher";
             trayIcon.BalloonTipText = "Password Hasher minimized to tray.";
@@ -270,12 +274,17 @@ namespace PasswordHasher
 
         private void onDeactivate(object sender, EventArgs e)
         {
-            System.Threading.Thread.Sleep(100);
+            System.Threading.Thread.Sleep(300);
             for (int i = 0; i < outputBox.Text.Length; i++)
             {
                 SendKeys.SendWait(outputBox.Text[i].ToString());
                 // Wait some time between sending each character
                 System.Threading.Thread.Sleep(50);
+            }
+
+            if (enterCheckBox.Checked)
+            {
+                SendKeys.Send("{ENTER}");
             }
 
             Deactivate -= sendPasswordToWindow;
@@ -311,6 +320,19 @@ namespace PasswordHasher
         private void trayCheckBox_Click(object sender, EventArgs e)
         {
             Properties.Settings.Default.Tray = trayCheckBox.Checked;
+            Properties.Settings.Default.Save();
+        }
+
+        private void ontopCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            TopMost = ontopCheckBox.Checked;
+            Properties.Settings.Default.OnTop = ontopCheckBox.Checked;
+            Properties.Settings.Default.Save();
+        }
+
+        private void enterCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.SendEnter = enterCheckBox.Checked;
             Properties.Settings.Default.Save();
         }
     }

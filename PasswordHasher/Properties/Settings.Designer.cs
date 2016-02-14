@@ -45,5 +45,29 @@ namespace PasswordHasher.Properties {
                 this["Tray"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool OnTop {
+            get {
+                return ((bool)(this["OnTop"]));
+            }
+            set {
+                this["OnTop"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SendEnter {
+            get {
+                return ((bool)(this["SendEnter"]));
+            }
+            set {
+                this["SendEnter"] = value;
+            }
+        }
     }
 }
