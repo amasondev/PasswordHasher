@@ -18,7 +18,7 @@ Download the latest release [Here](https://github.com/veridiam/PasswordHasher/re
 
 At this time, PasswordHasher is only available for Windows. For Linux and OS X users, I recommend using:
 
-    openssl passwd -1 -salt yoursalt yourpassword
+    openssl passwd -1 -salt yoursalt
 	
 This will generate the same hash as PasswordHasher.
 
