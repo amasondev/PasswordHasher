@@ -43,8 +43,8 @@
             this.trayCheckBox = new System.Windows.Forms.CheckBox();
             this.hashClearButton = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.enterCheckBox = new System.Windows.Forms.CheckBox();
             this.ontopCheckBox = new System.Windows.Forms.CheckBox();
+            this.enterCheckBox = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -68,11 +68,12 @@
             // 
             // outputBox
             // 
-            this.outputBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.outputBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.outputBox.Location = new System.Drawing.Point(12, 165);
             this.outputBox.Name = "outputBox";
             this.outputBox.ReadOnly = true;
-            this.outputBox.Size = new System.Drawing.Size(232, 20);
+            this.outputBox.Size = new System.Drawing.Size(383, 20);
             this.outputBox.TabIndex = 6;
             this.outputBox.UseSystemPasswordChar = true;
             // 
@@ -151,7 +152,7 @@
             // 
             this.displayCheckBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.displayCheckBox.AutoSize = true;
-            this.displayCheckBox.Location = new System.Drawing.Point(245, 144);
+            this.displayCheckBox.Location = new System.Drawing.Point(57, 144);
             this.displayCheckBox.Name = "displayCheckBox";
             this.displayCheckBox.Size = new System.Drawing.Size(60, 17);
             this.displayCheckBox.TabIndex = 9;
@@ -172,11 +173,11 @@
             // 
             // hashClearButton
             // 
-            this.hashClearButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.hashClearButton.Location = new System.Drawing.Point(248, 165);
-            this.hashClearButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.hashClearButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.hashClearButton.Location = new System.Drawing.Point(400, 165);
+            this.hashClearButton.Margin = new System.Windows.Forms.Padding(2);
             this.hashClearButton.Name = "hashClearButton";
-            this.hashClearButton.Size = new System.Drawing.Size(56, 19);
+            this.hashClearButton.Size = new System.Drawing.Size(56, 20);
             this.hashClearButton.TabIndex = 11;
             this.hashClearButton.Text = "Clear";
             this.hashClearButton.UseVisualStyleBackColor = true;
@@ -184,8 +185,9 @@
             // 
             // groupBox1
             // 
-            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
+            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox1.Controls.Add(this.ontopCheckBox);
             this.groupBox1.Controls.Add(this.enterCheckBox);
             this.groupBox1.Controls.Add(this.trayCheckBox);
@@ -195,17 +197,6 @@
             this.groupBox1.TabIndex = 12;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Options";
-            // 
-            // enterCheckBox
-            // 
-            this.enterCheckBox.AutoSize = true;
-            this.enterCheckBox.Location = new System.Drawing.Point(6, 42);
-            this.enterCheckBox.Name = "enterCheckBox";
-            this.enterCheckBox.Size = new System.Drawing.Size(78, 17);
-            this.enterCheckBox.TabIndex = 11;
-            this.enterCheckBox.Text = "Send enter";
-            this.enterCheckBox.UseVisualStyleBackColor = true;
-            this.enterCheckBox.CheckedChanged += new System.EventHandler(this.enterCheckBox_CheckedChanged);
             // 
             // ontopCheckBox
             // 
@@ -219,6 +210,17 @@
             this.ontopCheckBox.Text = "Always on top";
             this.ontopCheckBox.UseVisualStyleBackColor = true;
             this.ontopCheckBox.CheckedChanged += new System.EventHandler(this.ontopCheckBox_CheckedChanged);
+            // 
+            // enterCheckBox
+            // 
+            this.enterCheckBox.AutoSize = true;
+            this.enterCheckBox.Location = new System.Drawing.Point(6, 42);
+            this.enterCheckBox.Name = "enterCheckBox";
+            this.enterCheckBox.Size = new System.Drawing.Size(78, 17);
+            this.enterCheckBox.TabIndex = 11;
+            this.enterCheckBox.Text = "Send enter";
+            this.enterCheckBox.UseVisualStyleBackColor = true;
+            this.enterCheckBox.CheckedChanged += new System.EventHandler(this.enterCheckBox_CheckedChanged);
             // 
             // Form1
             // 
@@ -239,9 +241,8 @@
             this.Controls.Add(this.outputBox);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.passBox);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MaximizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(460, 250);
             this.Name = "Form1";
             this.Text = "Password Hasher";
             this.TopMost = true;

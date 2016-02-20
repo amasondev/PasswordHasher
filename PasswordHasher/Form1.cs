@@ -35,7 +35,7 @@ namespace PasswordHasher
             trayIcon.Text = "Password Hasher";
             trayIcon.BalloonTipText = "Password Hasher minimized to tray.";
             trayIcon.BalloonTipTitle = "Password Hasher";
-            trayIcon.Icon = new System.Drawing.Icon(System.Drawing.SystemIcons.Application, 32, 32);
+            trayIcon.Icon = this.Icon;
             trayIcon.DoubleClick += (sender, e) =>
             {
                 WindowState = FormWindowState.Normal;
