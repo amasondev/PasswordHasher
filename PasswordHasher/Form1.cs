@@ -233,7 +233,14 @@ namespace PasswordHasher
       System.Threading.Thread.Sleep(300);
       for (int i = 0; i < outputBox.Text.Length; i++)
       {
-        SendKeys.SendWait(outputBox.Text[i].ToString());
+        string key = outputBox.Text[i].ToString();
+        if (key == "+" || key == "^" || key == "%" || key == "~" || key == "(" || key == ")" || key == "{" || key == "}")
+        {
+          key = "{" + key + "}";
+        }
+
+        SendKeys.SendWait(key);
+
         // Wait some time between sending each character
         System.Threading.Thread.Sleep(50);
       }
@@ -245,7 +252,7 @@ namespace PasswordHasher
 
       Deactivate -= sendPasswordToWindow;
       Cursor = Cursors.Default;
-      outputBox.Clear();
+      passBox.Clear();
     }
 
     private void onExit(object sender, EventArgs e)
@@ -296,6 +303,8 @@ namespace PasswordHasher
     {
       Clipboard.SetText(outputBox.Text);
       SaveSalts();
+
+      passBox.Clear();
     }
 
     private void lengthControl_ValueChanged(object sender, EventArgs e)
