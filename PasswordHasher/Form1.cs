@@ -1,339 +1,429 @@
 ﻿using System;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Windows.Forms;
 using System.Security.Cryptography;
+using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Runtime.InteropServices;
 
 namespace PasswordHasher
 {
-    public partial class Form1 : Form
+  public partial class Form1 : Form
+  {
+    private EventHandler sendPasswordToWindow;
+
+    private ContextMenu trayMenu;
+    private NotifyIcon trayIcon;
+
+    private List<PasswordDomain> userDomains;
+    private string dataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\PasswordHasher\\savedDomains";
+
+    public Form1()
     {
-        private static String magic = "$1$";
-        private static String itoa64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+      InitializeComponent();
 
-        private EventHandler sendPasswordToWindow;
+      sendPasswordToWindow = new EventHandler(onDeactivate);
 
-        private ContextMenu trayMenu;
-        private NotifyIcon trayIcon;
+      if (Properties.Settings.Default.Salts == null)
+        Properties.Settings.Default.Salts = new StringCollection();
 
-        public Form1()
-        {
-            InitializeComponent();
+      // Load settings
+      trayCheckBox.Checked = Properties.Settings.Default.Tray;
+      enterCheckBox.Checked = Properties.Settings.Default.SendEnter;
+      ontopCheckBox.Checked = Properties.Settings.Default.OnTop;
 
-            sendPasswordToWindow = new EventHandler(onDeactivate);
+      // Get saved domains
+      LoadDomains();
 
-            if (Properties.Settings.Default.Salts == null)
-                Properties.Settings.Default.Salts = new StringCollection();
+      saltBox.DataSource = userDomains;
+      saltBox.DisplayMember = "domain";
+      saltBox.ValueMember = "domain";
 
-            // Load settings
-            trayCheckBox.Checked = Properties.Settings.Default.Tray;
-            enterCheckBox.Checked = Properties.Settings.Default.SendEnter;
-            ontopCheckBox.Checked = Properties.Settings.Default.OnTop;
+      trayIcon = new NotifyIcon();
+      trayIcon.Text = "Password Hasher";
+      trayIcon.BalloonTipText = "Password Hasher minimized to tray.";
+      trayIcon.BalloonTipTitle = "Password Hasher";
+      trayIcon.Icon = this.Icon;
+      trayIcon.DoubleClick += (sender, e) =>
+      {
+        WindowState = FormWindowState.Normal;
+        ShowInTaskbar = true;
+        trayIcon.Visible = false;
+      };
+      trayMenu = new ContextMenu();
+      GenerateTrayMenu();
+      trayIcon.ContextMenu = trayMenu;
+      trayIcon.Visible = false;
 
-            trayIcon = new NotifyIcon();
-            trayIcon.Text = "Password Hasher";
-            trayIcon.BalloonTipText = "Password Hasher minimized to tray.";
-            trayIcon.BalloonTipTitle = "Password Hasher";
-            trayIcon.Icon = this.Icon;
-            trayIcon.DoubleClick += (sender, e) =>
-            {
-                WindowState = FormWindowState.Normal;
-                ShowInTaskbar = true;
-                trayIcon.Visible = false;
-            };
-            trayMenu = new ContextMenu();
-            GenerateTrayMenu();
-            trayIcon.ContextMenu = trayMenu;
-            trayIcon.Visible = false;
-
-            foreach (String s in Properties.Settings.Default.Salts)
-            {
-                saltBox.Items.Add(s);
-            }
-        }
-
-        private void generateButton_Click(object sender, EventArgs e)
-        {
-            if (!saltBox.Items.Contains(saltBox.Text))
-                saltBox.Items.Add(saltBox.Text);
-
-            SaveSalts();
-                        
-            outputBox.Text = crypt(passBox.Text, saltBox.Text);
-            passBox.Clear();
-        }
-
-        private void SaveSalts()
-        {
-            GenerateTrayMenu();
-
-            StringCollection stringcollection = new StringCollection();
-
-            foreach (object o in saltBox.Items)
-                stringcollection.Add(o.ToString());
-
-            Properties.Settings.Default.Salts = stringcollection;
-            Properties.Settings.Default.Save();
-        }
-
-        
-        private void GenerateTrayMenu()
-        {
-            /*
-            trayMenu.MenuItems.Clear();
-
-            foreach(string s in Properties.Settings.Default.Salts)
-            {
-                trayMenu.MenuItems.Add( "Send: " + s, (sender, e) =>
-                {
-                    SetForegroundWindow(prevWindow);
-                    SendKeys.SendWait(crypt(passBox.Text, s));
-                });
-            }*/
-
-            trayMenu.MenuItems.Add("Exit", onExit);
-        }
-
-        private void passBox_KeyDown(object sender, KeyEventArgs e)
-        {
-
-        }
-
-        private static byte[] Concat(byte[] array1, byte[] array2)
-        {
-            byte[] concat = new byte[array1.Length + array2.Length];
-            System.Buffer.BlockCopy(array1, 0, concat, 0, array1.Length);
-            System.Buffer.BlockCopy(array2, 0, concat, array1.Length, array2.Length);
-            return concat;
-        }
-
-        private static byte[] PartialConcat(byte[]array1, byte[] array2, int max)
-        {
-            byte[] concat = new byte[array1.Length + max];
-            System.Buffer.BlockCopy(array1, 0, concat, 0, array1.Length);
-            System.Buffer.BlockCopy(array2, 0, concat, array1.Length, max);
-            return concat;
-        }
-
-        private static String to64(int value, int length)
-        {
-            StringBuilder result = new StringBuilder();
-
-            while(--length >= 0)
-            {
-                result.Append(itoa64.Substring(value & 0x3f, 1));
-                value >>= 6;
-            }
-
-            return result.ToString();
-        }
-
-        private String crypt(String password, String salt)
-        {
-            int saltEnd;
-            int len;
-            int value;
-            int i;
-
-            byte[] final;
-            byte[] passwordBytes;
-            byte[] saltBytes;
-            byte[] ctx;
-
-            StringBuilder result;
-            HashAlgorithm x_hash_alg = HashAlgorithm.Create("MD5");
-
-            // Skip magic if it exists
-            if (salt.StartsWith(magic))
-            {
-                salt = salt.Substring(magic.Length);
-            }
-
-            // Remove password hash if present
-            if ((saltEnd = salt.LastIndexOf('$')) != -1)
-            {
-                salt = salt.Substring(0, saltEnd);
-            }
-
-            // Shorten salt to 8 characters if it is longer
-            if (salt.Length > 8)
-            {
-                salt = salt.Substring(0, 8);
-            }
-
-            ctx = Encoding.ASCII.GetBytes((password + magic + salt));
-            final = x_hash_alg.ComputeHash(Encoding.ASCII.GetBytes((password + salt + password)));
-
-
-            // Add as many characters of ctx1 to ctx
-            for (len = password.Length; len > 0; len -= 16)
-            {
-                if (len > 16)
-                {
-                    ctx = Concat(ctx, final);
-                }
-                else
-                {
-                    ctx = PartialConcat(ctx, final, len);
-
-                }
-
-            }
-
-            // Then something really weird...
-            passwordBytes = Encoding.ASCII.GetBytes(password);
-
-            for (i = password.Length; i > 0; i >>= 1)
-            {
-                if ((i & 1) == 1)
-                {
-                    ctx = Concat(ctx, new byte[] { 0 });
-                }
-                else
-                {
-                    ctx = Concat(ctx, new byte[] { passwordBytes[0] });
-                }
-            }
-
-            final = x_hash_alg.ComputeHash(ctx);
-
-            byte[] ctx1;
-
-            // Do additional mutations
-            saltBytes = Encoding.ASCII.GetBytes(salt);
-            for (i = 0; i < 1000; i++)
-            {
-                ctx1 = new byte[] { };
-                if ((i & 1) == 1)
-                {
-                    ctx1 = Concat(ctx1, passwordBytes);
-                }
-                else
-                {
-                    ctx1 = Concat(ctx1, final);
-                }
-                if (i % 3 != 0)
-                {
-                    ctx1 = Concat(ctx1, saltBytes);
-                }
-                if (i % 7 != 0)
-                {
-                    ctx1 = Concat(ctx1, passwordBytes);
-                }
-                if ((i & 1) != 0)
-                {
-                    ctx1 = Concat(ctx1, final);
-                }
-                else
-                {
-                    ctx1 = Concat(ctx1, passwordBytes);
-                }
-                final = x_hash_alg.ComputeHash(ctx1);
-
-            }
-            result = new StringBuilder();
-            // Add the password hash to the result string
-            value = ((final[0] & 0xff) << 16) | ((final[6] & 0xff) << 8)
-                    | (final[12] & 0xff);
-            result.Append(to64(value, 4));
-            value = ((final[1] & 0xff) << 16) | ((final[7] & 0xff) << 8)
-                    | (final[13] & 0xff);
-            result.Append(to64(value, 4));
-            value = ((final[2] & 0xff) << 16) | ((final[8] & 0xff) << 8)
-                    | (final[14] & 0xff);
-            result.Append(to64(value, 4));
-            value = ((final[3] & 0xff) << 16) | ((final[9] & 0xff) << 8)
-                    | (final[15] & 0xff);
-            result.Append(to64(value, 4));
-            value = ((final[4] & 0xff) << 16) | ((final[10] & 0xff) << 8)
-                    | (final[5] & 0xff);
-            result.Append(to64(value, 4));
-            value = final[11] & 0xff;
-            result.Append(to64(value, 2));
-
-            // Return result string
-            return magic + salt + "$" + result.ToString();
-        }
-
-        private void removeSaltButton_Click(object sender, EventArgs e)
-        {
-            if (saltBox.Items.Contains(saltBox.Text))
-            {
-                saltBox.Items.Remove(saltBox.Text);
-                SaveSalts();
-            }
-        }
-
-        private void sendButton_Click(object sender, EventArgs e)
-        {
-            Deactivate += sendPasswordToWindow;
-
-            Cursor = Cursors.Cross;
-        }
-
-        private void onDeactivate(object sender, EventArgs e)
-        {
-            System.Threading.Thread.Sleep(300);
-            for (int i = 0; i < outputBox.Text.Length; i++)
-            {
-                SendKeys.SendWait(outputBox.Text[i].ToString());
-                // Wait some time between sending each character
-                System.Threading.Thread.Sleep(50);
-            }
-
-            if (enterCheckBox.Checked)
-            {
-                SendKeys.Send("{ENTER}");
-            }
-
-            Deactivate -= sendPasswordToWindow;
-            Cursor = Cursors.Default;
-            outputBox.Clear();
-        }
-
-        private void clearOutput(object sender, EventArgs e)
-        {
-            outputBox.Clear();
-        }
-
-        private void onExit(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
-
-        private void displayCheckBox_Click(object sender, EventArgs e)
-        {
-            outputBox.UseSystemPasswordChar = !displayCheckBox.Checked;
-        }
-
-        private void Form1_Resize(object sender, EventArgs e)
-        {
-            if (trayCheckBox.Checked && WindowState == FormWindowState.Minimized)
-            {
-                trayIcon.Visible = true;
-                trayIcon.ShowBalloonTip(5000);
-                ShowInTaskbar = false;
-            }
-        }
-
-        private void trayCheckBox_Click(object sender, EventArgs e)
-        {
-            Properties.Settings.Default.Tray = trayCheckBox.Checked;
-            Properties.Settings.Default.Save();
-        }
-
-        private void ontopCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            TopMost = ontopCheckBox.Checked;
-            Properties.Settings.Default.OnTop = ontopCheckBox.Checked;
-            Properties.Settings.Default.Save();
-        }
-
-        private void enterCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            Properties.Settings.Default.SendEnter = enterCheckBox.Checked;
-            Properties.Settings.Default.Save();
-        }
     }
+
+    private void LoadDomains()
+    {
+      try
+      {
+        using (Stream stream = File.OpenRead(dataPath))
+        {
+          BinaryFormatter formatter = new BinaryFormatter();
+          userDomains = (List<PasswordDomain>)formatter.Deserialize(stream);
+          stream.Close();
+        }
+      }
+      catch (DirectoryNotFoundException e)
+      {
+        // File not found, it will be created
+        userDomains = new List<PasswordDomain>();
+
+      }
+      catch (FileNotFoundException e)
+      {
+        // File not found, it will be created
+        userDomains = new List<PasswordDomain>();
+
+      }
+      catch (Exception e)
+      {
+        userDomains = new List<PasswordDomain>();
+        MessageBox.Show(e.Message);
+      }
+    }
+
+    private void SaveSalts()
+    {
+      GetSelectedDomain();
+
+      try
+      {
+        Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\PasswordHasher");
+        using (Stream stream = File.Open(dataPath, FileMode.Create))
+        {
+          BinaryFormatter formatter = new BinaryFormatter();
+          formatter.Serialize(stream, userDomains);
+          stream.Close();
+        }
+      }
+      catch (Exception e)
+      {
+        MessageBox.Show(e.Message);
+      }
+    }
+
+    private PasswordDomain GetSelectedDomain()
+    {
+      if (string.IsNullOrEmpty(saltBox.Text))
+        return null;
+
+      PasswordDomain current = userDomains.Find((PasswordDomain p) =>
+      {
+        return (p.domain == saltBox.Text);
+      }
+      );
+      if (current == null)
+      {
+        PasswordDomain n = new PasswordDomain(saltBox.Text);
+        userDomains.Add(n);
+
+        saltBox.DataSource = null;
+        saltBox.DataSource = userDomains;
+        saltBox.DisplayMember = "domain";
+        saltBox.ValueMember = "domain";
+        saltBox.SelectedItem = n;
+      }
+
+      return current;
+    }
+
+    private void DoGenerateHash()
+    {
+      if (string.IsNullOrEmpty(saltBox.Text) || string.IsNullOrEmpty(passBox.Text))
+      {
+        outputBox.Text = "";
+        return;
+      }
+
+      outputBox.Text = PasswordHash(passBox.Text + saltBox.Text, (int)lengthControl.Value, (int)iterationsControl.Value, lowersCheckBox.Checked, uppersCheckBox.Checked, numericCheckBox.Checked, specialCheckBox.Checked);
+    }
+
+
+    private void GenerateTrayMenu()
+    {
+      trayMenu.MenuItems.Add("Exit", onExit);
+    }
+
+    private string PasswordHash(string data, int length, int iterations, bool doLowers, bool doUppers, bool doNumerals, bool doSpecials)
+    {
+      if (!doLowers && !doUppers && !doNumerals && !doSpecials)
+        return "";
+
+      string loweralphas = "abcdefghijklmnopqrstuvwxyz";
+      string upperalphas = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      string numerals = "0123456789";
+      string specials = "(){}[]<>/\\|-=+*_,.;:`\"'~!@#$%^&";
+
+      string hashAlphabet = "";
+      if (doLowers) hashAlphabet = hashAlphabet + loweralphas;
+      if (doUppers) hashAlphabet = hashAlphabet + upperalphas;
+      if (doNumerals) hashAlphabet = hashAlphabet + numerals;
+      if (doSpecials) hashAlphabet = hashAlphabet + specials;
+      int alphabetLength = hashAlphabet.Length;
+
+      StringBuilder result = new StringBuilder();
+
+      using (SHA256 sha = SHA256.Create())
+      {
+        byte[] hashData = Encoding.UTF8.GetBytes(data);
+
+        // Iterate the hash
+        for (int i = 0; i < iterations; i++)
+        {
+          hashData = sha.ComputeHash(hashData);
+        }
+
+        // Create the output
+        for (int i = 0; i < length; i++)
+        {
+          // Iterate the hash as output length increases
+          byte[] longHashData = hashData;
+          for (int j = 0; j < i / hashData.Length; j++)
+            longHashData = sha.ComputeHash(longHashData);
+
+          int index = longHashData[i % longHashData.Length];
+
+          result.Append(hashAlphabet[index % hashAlphabet.Length]);
+        }
+      }
+
+      return result.ToString();
+    }
+
+    private void removeSaltButton_Click(object sender, EventArgs e)
+    {
+      PasswordDomain current = userDomains.Find((PasswordDomain p) =>
+      {
+        return (p.domain == saltBox.Text);
+      }
+      );
+      if (current != null)
+      {
+        userDomains.Remove(current);
+
+        saltBox.DataSource = null;
+        saltBox.DataSource = userDomains;
+        saltBox.DisplayMember = "domain";
+        saltBox.ValueMember = "domain";
+      }
+
+      SaveSalts();
+    }
+
+    private void sendButton_Click(object sender, EventArgs e)
+    {
+      // Save the salt to the dropdown box
+      SaveSalts();
+
+      if (string.IsNullOrEmpty(outputBox.Text)) return;
+
+      Deactivate += sendPasswordToWindow;
+
+      Cursor = Cursors.Cross;
+    }
+
+    private void onDeactivate(object sender, EventArgs e)
+    {
+      System.Threading.Thread.Sleep(300);
+      for (int i = 0; i < outputBox.Text.Length; i++)
+      {
+        SendKeys.SendWait(outputBox.Text[i].ToString());
+        // Wait some time between sending each character
+        System.Threading.Thread.Sleep(50);
+      }
+
+      if (enterCheckBox.Checked)
+      {
+        SendKeys.Send("{ENTER}");
+      }
+
+      Deactivate -= sendPasswordToWindow;
+      Cursor = Cursors.Default;
+      outputBox.Clear();
+    }
+
+    private void onExit(object sender, EventArgs e)
+    {
+      Application.Exit();
+    }
+
+    private void displayCheckBox_Click(object sender, EventArgs e)
+    {
+      outputBox.UseSystemPasswordChar = !displayCheckBox.Checked;
+    }
+
+    private void Form1_Resize(object sender, EventArgs e)
+    {
+      if (trayCheckBox.Checked && WindowState == FormWindowState.Minimized)
+      {
+        trayIcon.Visible = true;
+        trayIcon.ShowBalloonTip(5000);
+        ShowInTaskbar = false;
+      }
+    }
+
+    private void trayCheckBox_Click(object sender, EventArgs e)
+    {
+      Properties.Settings.Default.Tray = trayCheckBox.Checked;
+      Properties.Settings.Default.Save();
+    }
+
+    private void ontopCheckBox_CheckedChanged(object sender, EventArgs e)
+    {
+      TopMost = ontopCheckBox.Checked;
+      Properties.Settings.Default.OnTop = ontopCheckBox.Checked;
+      Properties.Settings.Default.Save();
+    }
+
+    private void enterCheckBox_CheckedChanged(object sender, EventArgs e)
+    {
+      Properties.Settings.Default.SendEnter = enterCheckBox.Checked;
+      Properties.Settings.Default.Save();
+    }
+
+    private void passBox_TextChanged(object sender, EventArgs e)
+    {
+      DoGenerateHash();
+    }
+
+    private void copyButtonClicked(object sender, EventArgs e)
+    {
+      Clipboard.SetText(outputBox.Text);
+      SaveSalts();
+    }
+
+    private void lengthControl_ValueChanged(object sender, EventArgs e)
+    {
+      PasswordDomain p = GetSelectedDomain();
+      if (p == null) return;
+
+      p.length = (int)lengthControl.Value;
+
+      DoGenerateHash();
+
+      SaveSalts();
+    }
+
+    private void iterationsControl_ValueChanged(object sender, EventArgs e)
+    {
+      PasswordDomain p = GetSelectedDomain();
+      if (p == null) return;
+
+      p.iterations = (int)iterationsControl.Value;
+
+      DoGenerateHash();
+
+      SaveSalts();
+    }
+
+    private void uppersCheckBox_CheckedChanged(object sender, EventArgs e)
+    {
+      PasswordDomain p = GetSelectedDomain();
+      if (p == null) return;
+
+      p.uppers = uppersCheckBox.Checked;
+
+      DoGenerateHash();
+
+      SaveSalts();
+    }
+
+    private void lowersCheckBox_CheckedChanged(object sender, EventArgs e)
+    {
+      PasswordDomain p = GetSelectedDomain();
+      if (p == null) return;
+
+      p.lowers = lowersCheckBox.Checked;
+
+      DoGenerateHash();
+
+      SaveSalts();
+    }
+
+    private void numericCheckBox_CheckedChanged(object sender, EventArgs e)
+    {
+      PasswordDomain p = GetSelectedDomain();
+      if (p == null) return;
+
+      p.numerals = numericCheckBox.Checked;
+
+      DoGenerateHash();
+
+      SaveSalts();
+    }
+
+    private void specialCheckBox_CheckedChanged(object sender, EventArgs e)
+    {
+      PasswordDomain p = GetSelectedDomain();
+      if (p == null) return;
+
+      p.specials = specialCheckBox.Checked;
+
+      DoGenerateHash();
+
+      SaveSalts();
+    }
+
+    private void saltBox_SelectedIndexChanged(object sender, EventArgs e)
+    {
+      PasswordDomain p = saltBox.SelectedItem as PasswordDomain;
+      if (p == null) return;
+
+      if (p.length >= lengthControl.Minimum && p.length <= lengthControl.Maximum)
+        lengthControl.Value = p.length;
+
+      if (p.iterations >= iterationsControl.Minimum && p.iterations <= iterationsControl.Maximum)
+        iterationsControl.Value = p.iterations;
+
+      uppersCheckBox.Checked = p.uppers;
+      lowersCheckBox.Checked = p.lowers;
+      numericCheckBox.Checked = p.numerals;
+      specialCheckBox.Checked = p.specials;
+
+      DoGenerateHash();
+    }
+
+    private void saltBox_TextUpdate(object sender, EventArgs e)
+    {
+      DoGenerateHash();
+    }
+
+    private void Form1_KeyDown(object sender, KeyEventArgs e)
+    {
+      if (e.KeyCode == Keys.Escape)
+      {
+        Deactivate -= sendPasswordToWindow;
+        Cursor = Cursors.Default;
+      }
+    }
+  }
+
+  [Serializable]
+  public class PasswordDomain
+  {
+    public PasswordDomain(string domain, int length = 32, int iterations = 1, bool uppers = true, bool lowers = true, bool numerals = true, bool specials = true)
+    {
+      this.domain = domain;
+      this.length = length;
+      this.iterations = iterations;
+      this.uppers = uppers;
+      this.lowers = lowers;
+      this.numerals = numerals;
+      this.specials = specials;
+    }
+
+    public string domain { get; set; }
+    public int length;
+    public int iterations;
+    public bool uppers;
+    public bool lowers;
+    public bool numerals;
+    public bool specials;
+  }
 }
