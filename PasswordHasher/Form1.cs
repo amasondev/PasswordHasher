@@ -12,6 +12,7 @@ namespace PasswordHasher
   public partial class Form1 : Form
   {
     private EventHandler sendPasswordToWindow;
+    private BindingSource domainBindingSource = new BindingSource();
 
     private ContextMenu trayMenu;
     private NotifyIcon trayIcon;
@@ -24,21 +25,6 @@ namespace PasswordHasher
       InitializeComponent();
 
       sendPasswordToWindow = new EventHandler(onDeactivate);
-
-      if (Properties.Settings.Default.Salts == null)
-        Properties.Settings.Default.Salts = new StringCollection();
-
-      // Load settings
-      trayCheckBox.Checked = Properties.Settings.Default.Tray;
-      enterCheckBox.Checked = Properties.Settings.Default.SendEnter;
-      ontopCheckBox.Checked = Properties.Settings.Default.OnTop;
-
-      // Get saved domains
-      LoadDomains();
-
-      saltBox.DataSource = userDomains;
-      saltBox.DisplayMember = "domain";
-      saltBox.ValueMember = "domain";
 
       trayIcon = new NotifyIcon();
       trayIcon.Text = "Password Hasher";
@@ -56,6 +42,22 @@ namespace PasswordHasher
       trayIcon.ContextMenu = trayMenu;
       trayIcon.Visible = false;
 
+    }
+
+    private void Form1_Load(object sender, EventArgs e)
+    {
+      LoadDomains();
+      domainBindingSource.DataSource = userDomains;
+      saltBox.DataSource = domainBindingSource;
+      saltBox.DisplayMember = "domain";
+
+      PasswordDomain p = saltBox.SelectedItem as PasswordDomain;
+      SelectDomain(p);
+
+      // Load settings
+      trayCheckBox.Checked = Properties.Settings.Default.Tray;
+      enterCheckBox.Checked = Properties.Settings.Default.SendEnter;
+      ontopCheckBox.Checked = Properties.Settings.Default.OnTop;
     }
 
     private void LoadDomains()
@@ -90,6 +92,8 @@ namespace PasswordHasher
 
     private void SaveSalts()
     {
+      Console.WriteLine("[DEBUG] Saving salts.");
+
       GetSelectedDomain();
 
       try
@@ -110,24 +114,27 @@ namespace PasswordHasher
 
     private PasswordDomain GetSelectedDomain()
     {
-      if (string.IsNullOrEmpty(saltBox.Text))
+      PasswordDomain existing = saltBox.SelectedItem as PasswordDomain;
+      if (existing != null) return existing;
+
+      if (string.IsNullOrWhiteSpace(saltBox.Text))
         return null;
 
       PasswordDomain current = userDomains.Find((PasswordDomain p) =>
-      {
+      {        
         return (p.domain == saltBox.Text);
       }
       );
       if (current == null)
       {
-        PasswordDomain n = new PasswordDomain(saltBox.Text);
-        userDomains.Add(n);
+        Console.WriteLine("[DEBUG] Creating new PasswordDomain: " + saltBox.Text);
+        current = new PasswordDomain(saltBox.Text);
+        userDomains.Add(current);
 
-        saltBox.DataSource = null;
-        saltBox.DataSource = userDomains;
-        saltBox.DisplayMember = "domain";
-        saltBox.ValueMember = "domain";
-        saltBox.SelectedItem = n;
+        domainBindingSource.SuspendBinding();
+        domainBindingSource.ResumeBinding();
+
+        saltBox.SelectedItem = current;
       }
 
       return current;
@@ -135,13 +142,37 @@ namespace PasswordHasher
 
     private void DoGenerateHash()
     {
-      if (string.IsNullOrEmpty(saltBox.Text) || string.IsNullOrEmpty(passBox.Text))
+      if (string.IsNullOrWhiteSpace(saltBox.Text) || string.IsNullOrEmpty(passBox.Text))
       {
         outputBox.Text = "";
         return;
       }
 
-      outputBox.Text = PasswordHash(passBox.Text + saltBox.Text, (int)lengthControl.Value, (int)iterationsControl.Value, lowersCheckBox.Checked, uppersCheckBox.Checked, numericCheckBox.Checked, specialCheckBox.Checked);
+      Console.WriteLine("[DEBUG] Generating hash for " + saltBox.Text);
+
+      outputBox.Text = PasswordHash(passBox.Text,
+        new PasswordDomain(
+          saltBox.Text,
+          (int)lengthControl.Value,
+          (int)iterationsControl.Value,
+          uppersCheckBox.Checked,
+          lowersCheckBox.Checked,
+          numericCheckBox.Checked,
+          specialCheckBox.Checked
+          )
+        );
+    }
+
+    private void DoGenerateHash(PasswordDomain p)
+    {
+      if (p == null || string.IsNullOrEmpty(passBox.Text))
+      {
+        outputBox.Text = "";
+        return;
+      }
+      Console.WriteLine("[DEBUG] Generating hash for " + p.domain);
+
+      outputBox.Text = PasswordHash(passBox.Text, p);
     }
 
 
@@ -150,9 +181,9 @@ namespace PasswordHasher
       trayMenu.MenuItems.Add("Exit", onExit);
     }
 
-    private string PasswordHash(string data, int length, int iterations, bool doLowers, bool doUppers, bool doNumerals, bool doSpecials)
+    private string PasswordHash(string password, PasswordDomain domain)
     {
-      if (!doLowers && !doUppers && !doNumerals && !doSpecials)
+      if (domain == null || !domain.IsValid())
         return "";
 
       string loweralphas = "abcdefghijklmnopqrstuvwxyz";
@@ -161,26 +192,26 @@ namespace PasswordHasher
       string specials = "(){}[]<>/\\|-=+*_,.;:`\"'~!@#$%^&";
 
       string hashAlphabet = "";
-      if (doLowers) hashAlphabet = hashAlphabet + loweralphas;
-      if (doUppers) hashAlphabet = hashAlphabet + upperalphas;
-      if (doNumerals) hashAlphabet = hashAlphabet + numerals;
-      if (doSpecials) hashAlphabet = hashAlphabet + specials;
+      if (domain.lowers) hashAlphabet = hashAlphabet + loweralphas;
+      if (domain.uppers) hashAlphabet = hashAlphabet + upperalphas;
+      if (domain.numerals) hashAlphabet = hashAlphabet + numerals;
+      if (domain.specials) hashAlphabet = hashAlphabet + specials;
       int alphabetLength = hashAlphabet.Length;
 
       StringBuilder result = new StringBuilder();
 
       using (SHA256 sha = SHA256.Create())
       {
-        byte[] hashData = Encoding.UTF8.GetBytes(data);
+        byte[] hashData = Encoding.UTF8.GetBytes(password + domain.domain);
 
         // Iterate the hash
-        for (int i = 0; i < iterations; i++)
+        for (int i = 0; i < domain.iterations; i++)
         {
           hashData = sha.ComputeHash(hashData);
         }
 
         // Create the output
-        for (int i = 0; i < length; i++)
+        for (int i = 0; i < domain.length; i++)
         {
           // Iterate the hash as output length increases
           byte[] longHashData = hashData;
@@ -198,19 +229,15 @@ namespace PasswordHasher
 
     private void removeSaltButton_Click(object sender, EventArgs e)
     {
-      PasswordDomain current = userDomains.Find((PasswordDomain p) =>
-      {
-        return (p.domain == saltBox.Text);
-      }
-      );
+      PasswordDomain current = GetSelectedDomain();
+
       if (current != null)
       {
+        Console.WriteLine("[DEBUG] Removing PasswordDomain: " + current.domain);
         userDomains.Remove(current);
-
-        saltBox.DataSource = null;
-        saltBox.DataSource = userDomains;
-        saltBox.DisplayMember = "domain";
-        saltBox.ValueMember = "domain";
+        domainBindingSource.SuspendBinding();
+        domainBindingSource.ResumeBinding();
+        saltBox.SelectedIndex = 0;
       }
 
       SaveSalts();
@@ -312,6 +339,7 @@ namespace PasswordHasher
       PasswordDomain p = GetSelectedDomain();
       if (p == null) return;
 
+      Console.WriteLine("[DEBUG] Setting " + p.domain + " length to " + lengthControl.Value.ToString());
       p.length = (int)lengthControl.Value;
 
       DoGenerateHash();
@@ -324,6 +352,7 @@ namespace PasswordHasher
       PasswordDomain p = GetSelectedDomain();
       if (p == null) return;
 
+      Console.WriteLine("[DEBUG] Setting " + p.domain + " iterations to " + iterationsControl.Value.ToString());
       p.iterations = (int)iterationsControl.Value;
 
       DoGenerateHash();
@@ -336,6 +365,7 @@ namespace PasswordHasher
       PasswordDomain p = GetSelectedDomain();
       if (p == null) return;
 
+      Console.WriteLine("[DEBUG] Setting " + p.domain + " uppers to " + uppersCheckBox.Checked.ToString());
       p.uppers = uppersCheckBox.Checked;
 
       DoGenerateHash();
@@ -348,6 +378,7 @@ namespace PasswordHasher
       PasswordDomain p = GetSelectedDomain();
       if (p == null) return;
 
+      Console.WriteLine("[DEBUG] Setting " + p.domain + " lowers to " + lowersCheckBox.Checked.ToString());
       p.lowers = lowersCheckBox.Checked;
 
       DoGenerateHash();
@@ -360,6 +391,7 @@ namespace PasswordHasher
       PasswordDomain p = GetSelectedDomain();
       if (p == null) return;
 
+      Console.WriteLine("[DEBUG] Setting " + p.domain + " numerals to " + numericCheckBox.Checked.ToString());
       p.numerals = numericCheckBox.Checked;
 
       DoGenerateHash();
@@ -372,6 +404,7 @@ namespace PasswordHasher
       PasswordDomain p = GetSelectedDomain();
       if (p == null) return;
 
+      Console.WriteLine("[DEBUG] Setting " + p.domain + " specials to " + specialCheckBox.Checked.ToString());
       p.specials = specialCheckBox.Checked;
 
       DoGenerateHash();
@@ -379,10 +412,14 @@ namespace PasswordHasher
       SaveSalts();
     }
 
-    private void saltBox_SelectedIndexChanged(object sender, EventArgs e)
+    private void SelectDomain(PasswordDomain p)
     {
-      PasswordDomain p = saltBox.SelectedItem as PasswordDomain;
       if (p == null) return;
+
+      saltBox.SelectedItem = p;
+
+      Console.WriteLine("[DEBUG] saltBox Selection changed to: " + p.domain);
+      p.PrintInfo();
 
       if (p.length >= lengthControl.Minimum && p.length <= lengthControl.Maximum)
         lengthControl.Value = p.length;
@@ -395,7 +432,15 @@ namespace PasswordHasher
       numericCheckBox.Checked = p.numerals;
       specialCheckBox.Checked = p.specials;
 
-      DoGenerateHash();
+      DoGenerateHash(p);
+    }
+
+    private void saltBox_SelectedIndexChanged(object sender, EventArgs e)
+    {
+      PasswordDomain p = saltBox.SelectedItem as PasswordDomain;
+      if (p == null) return;
+      
+      SelectDomain(p);
     }
 
     private void saltBox_TextUpdate(object sender, EventArgs e)
@@ -411,6 +456,7 @@ namespace PasswordHasher
         Cursor = Cursors.Default;
       }
     }
+
   }
 
   [Serializable]
@@ -425,6 +471,27 @@ namespace PasswordHasher
       this.lowers = lowers;
       this.numerals = numerals;
       this.specials = specials;
+    }
+
+    public bool IsValid()
+    {
+      return (uppers || lowers || numerals || specials);
+    }
+
+    public void PrintInfo()
+    {
+      Console.WriteLine("[Debug] " + domain + " information:");
+      Console.WriteLine("Domain: " + domain);
+      Console.WriteLine("Length: " + length.ToString());
+      Console.WriteLine("Iterations: " + iterations.ToString());
+
+      string bools = "";
+      if (uppers) bools += "uppers, ";
+      if (lowers) bools += "lowers, ";
+      if (numerals) bools += "numerals, ";
+      if (specials) bools += "specials, ";
+
+      Console.WriteLine(bools);
     }
 
     public string domain { get; set; }

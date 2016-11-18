@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+      this.components = new System.ComponentModel.Container();
       System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
       this.passBox = new System.Windows.Forms.TextBox();
       this.label1 = new System.Windows.Forms.Label();
@@ -53,6 +54,7 @@
       this.specialCheckBox = new System.Windows.Forms.CheckBox();
       this.numericCheckBox = new System.Windows.Forms.CheckBox();
       this.uppersCheckBox = new System.Windows.Forms.CheckBox();
+      this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
       this.groupBox1.SuspendLayout();
       this.groupBox2.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.lengthControl)).BeginInit();
@@ -82,11 +84,14 @@
       // 
       this.outputBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+      this.outputBox.Font = new System.Drawing.Font("Lucida Console", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
       this.outputBox.Location = new System.Drawing.Point(12, 238);
       this.outputBox.Name = "outputBox";
       this.outputBox.ReadOnly = true;
       this.outputBox.Size = new System.Drawing.Size(408, 20);
       this.outputBox.TabIndex = 6;
+      this.toolTip1.SetToolTip(this.outputBox, "Other applications can read the clipboard without your knowledge. Use the Send bu" +
+        "tton to send the output directly to a textbox in another window.");
       this.outputBox.UseSystemPasswordChar = true;
       // 
       // label2
@@ -107,7 +112,7 @@
       this.saltBox.Name = "saltBox";
       this.saltBox.Size = new System.Drawing.Size(147, 21);
       this.saltBox.TabIndex = 1;
-      this.saltBox.SelectedIndexChanged += new System.EventHandler(this.saltBox_SelectedIndexChanged);
+      this.saltBox.SelectionChangeCommitted += new System.EventHandler(this.saltBox_SelectedIndexChanged);
       this.saltBox.TextUpdate += new System.EventHandler(this.saltBox_TextUpdate);
       // 
       // label3
@@ -177,10 +182,10 @@
       // copyButton
       // 
       this.copyButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-      this.copyButton.Location = new System.Drawing.Point(425, 237);
+      this.copyButton.Location = new System.Drawing.Point(425, 238);
       this.copyButton.Margin = new System.Windows.Forms.Padding(2);
       this.copyButton.Name = "copyButton";
-      this.copyButton.Size = new System.Drawing.Size(56, 22);
+      this.copyButton.Size = new System.Drawing.Size(56, 21);
       this.copyButton.TabIndex = 11;
       this.copyButton.Text = "Copy";
       this.copyButton.UseVisualStyleBackColor = true;
@@ -357,12 +362,16 @@
       this.uppersCheckBox.UseVisualStyleBackColor = true;
       this.uppersCheckBox.CheckedChanged += new System.EventHandler(this.uppersCheckBox_CheckedChanged);
       // 
+      // toolTip1
+      // 
+      this.toolTip1.AutomaticDelay = 200;
+      // 
       // Form1
       // 
       this.AcceptButton = this.sendButton;
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-      this.ClientSize = new System.Drawing.Size(492, 291);
+      this.ClientSize = new System.Drawing.Size(492, 298);
       this.Controls.Add(this.groupBox1);
       this.Controls.Add(this.groupBox2);
       this.Controls.Add(this.copyButton);
@@ -383,6 +392,7 @@
       this.Name = "Form1";
       this.Text = "Password Hasher";
       this.TopMost = true;
+      this.Load += new System.EventHandler(this.Form1_Load);
       this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
       this.Resize += new System.EventHandler(this.Form1_Resize);
       this.groupBox1.ResumeLayout(false);
@@ -422,6 +432,7 @@
     private System.Windows.Forms.NumericUpDown lengthControl;
     private System.Windows.Forms.Label label5;
     private System.Windows.Forms.NumericUpDown iterationsControl;
+    private System.Windows.Forms.ToolTip toolTip1;
   }
 }
 
