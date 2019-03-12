@@ -237,7 +237,7 @@ namespace PasswordHasher
         userDomains.Remove(current);
         domainBindingSource.SuspendBinding();
         domainBindingSource.ResumeBinding();
-        saltBox.SelectedIndex = 0;
+        //saltBox.SelectedIndex = 0; this was causing problems :D
       }
 
       SaveSalts();
